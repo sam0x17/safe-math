@@ -123,7 +123,6 @@ impl Drop for U63OrPtr {
 mod tests {
     use super::*;
     extern crate alloc;
-    use alloc::alloc::{alloc, Layout};
 
     #[test]
     fn test_u63() {
