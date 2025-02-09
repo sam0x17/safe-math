@@ -9,6 +9,7 @@ use core::ptr::NonNull;
 /// undefined behavior. Users must ensure that pointers stored in this type
 /// remain valid for the duration of their use.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct U63OrPtr {
     data: u64,
 }
@@ -150,16 +151,33 @@ mod tests {
 
     #[test]
     fn test_ptr() {
-        let layout = Layout::from_size_align(16, 8).unwrap();
-        let raw_ptr = unsafe { alloc(layout) };
-        let ptr = NonNull::new(raw_ptr).unwrap();
-        let val = U63OrPtr::from_ptr(ptr, 16).unwrap();
-        assert!(val.is_ptr());
-        if let U63OrPtrExpanded::Ptr(expanded_ptr, size) = val.expand() {
-            assert_eq!(size, 16);
-            assert_eq!(expanded_ptr, ptr);
-        } else {
-            panic!("Expected a pointer variant");
+        let mut value: u128 = 0;
+        const INC: u128 = u128::MAX / 10_000;
+        loop {
+            let mut bx = Box::new(value);
+            let ptr: *mut u8 = &mut *bx as *mut u128 as *mut u8;
+            core::mem::forget(bx);
+            let ptr = NonNull::new(ptr).unwrap();
+
+            let val = U63OrPtr::from_ptr(ptr, size_of::<u128>() as u16).unwrap();
+            assert!(val.is_ptr());
+
+            if let U63OrPtrExpanded::Ptr(expanded_ptr, expanded_size) = val.expand() {
+                assert_eq!(expanded_size, size_of::<u128>());
+                assert_eq!(expanded_ptr, ptr);
+
+                // Read back and assert correctness
+                let stored_value = unsafe { *(expanded_ptr.as_ptr() as *const u128) };
+                assert_eq!(stored_value, value);
+            } else {
+                panic!("Expected a pointer variant");
+            }
+
+            if u128::MAX - INC < value {
+                break;
+            }
+
+            value += INC;
         }
     }
 }
