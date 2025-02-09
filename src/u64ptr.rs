@@ -1,7 +1,7 @@
 extern crate alloc;
 use alloc::alloc::dealloc;
 use alloc::boxed::Box;
-use core::ptr::NonNull;
+use core::ptr::{addr_of_mut, NonNull};
 
 pub const MAX_U63: u64 = (1 << 63) - 1;
 
@@ -102,8 +102,8 @@ impl U63OrPtr {
     /// Extract the expanded representation
     ///
     /// # Safety
-    /// This function constructs a `NonNull<u8>` from a raw pointer, which assumes
-    /// that the pointer was originally valid when stored.
+    /// Constructs a `NonNull<u8>` from a stored raw pointer, assuming
+    /// the pointer was originally valid.
     pub fn expand(&self) -> U63OrPtrExpanded {
         if self.is_u63() {
             U63OrPtrExpanded::U64(self.data)
@@ -111,8 +111,9 @@ impl U63OrPtr {
             let addr = self.data & Self::PTR_MASK;
             let size = (((self.data >> Self::SIZE_SHIFT) & Self::SIZE_MASK)
                 & !(1 << (62 - Self::SIZE_SHIFT))) as usize;
-            let non_null_ptr =
-                NonNull::new(addr as *mut u8).expect("Invalid pointer stored in U63OrPtr");
+            let ptr = addr_of_mut!(*(addr as *mut u8));
+            let non_null_ptr = unsafe { NonNull::new_unchecked(ptr) };
+
             U63OrPtrExpanded::Ptr(non_null_ptr, size)
         }
     }
@@ -182,7 +183,8 @@ mod tests {
                 assert_eq!(expanded_ptr, ptr);
 
                 // Read back and assert correctness
-                let stored_value = unsafe { *(expanded_ptr.as_ptr() as *const u128) };
+                let stored_value = unsafe { expanded_ptr.as_ptr().cast::<u128>().read_unaligned() };
+
                 assert_eq!(stored_value, value);
             } else {
                 panic!("Expected a pointer variant");
