@@ -1,7 +1,6 @@
 extern crate alloc;
 use alloc::alloc::dealloc;
 use alloc::boxed::Box;
-use core::alloc::Layout;
 use core::ptr::NonNull;
 
 pub const MAX_U63: u64 = (1 << 63) - 1;
