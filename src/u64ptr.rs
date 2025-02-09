@@ -1,6 +1,10 @@
 extern crate alloc;
 use alloc::alloc::dealloc;
+use alloc::boxed::Box;
+use core::alloc::Layout;
 use core::ptr::NonNull;
+
+pub const MAX_U63: u64 = (1 << 63) - 1;
 
 /// An unsafe type that stores either a 63-bit integer or a pointer with a size.
 ///
@@ -55,7 +59,7 @@ impl U63OrPtr {
     /// # Safety
     /// The caller must ensure that the pointer is properly aligned, non-null,
     /// and that the size fits within 15 bits.
-    pub fn from_ptr(ptr: NonNull<u8>, size: u16) -> Result<Self, U63OrPtrError> {
+    pub unsafe fn from_ptr(ptr: NonNull<u8>, size: u16) -> Result<Self, U63OrPtrError> {
         let addr = ptr.as_ptr() as u64;
         if addr & !Self::PTR_MASK != 0 {
             return Err(U63OrPtrError::InvalidPointer);
@@ -69,6 +73,21 @@ impl U63OrPtr {
                 | ((size as u64 & Self::SIZE_MASK) << Self::SIZE_SHIFT)
                 | (1 << 62),
         })
+    }
+
+    /// Create a new [`U63OrPtr`]` from the specified value by heap allocating `val`.
+    pub fn from_val<T: Sized>(val: T) -> Self {
+        const { assert!(size_of::<T>() <= 32000) }
+        let bx = Box::new(val);
+        let ptr: *mut u8 = Box::leak(bx) as *mut T as *mut u8;
+        let Some(ptr_non) = NonNull::new(ptr) else {
+            unreachable!("pointer is non-null")
+        };
+        let size = core::mem::size_of::<T>() as u16;
+        let Ok(s) = (unsafe { Self::from_ptr(ptr_non, size) }) else {
+            unreachable!("const assertion prevents this")
+        };
+        s
     }
 
     /// Check if this is a u63 value
@@ -122,19 +141,17 @@ impl Drop for U63OrPtr {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate alloc;
 
     #[test]
     fn test_u63() {
         let mut i = 0;
-        const MAX: u64 = u64::MAX >> 1;
-        const INC: u64 = MAX / 1_000_000;
+        const INC: u64 = MAX_U63 / 1_000_000;
         loop {
             let val = U63OrPtr::from_u63(i).unwrap();
             assert!(val.is_u63());
             assert_eq!(val.expand(), U63OrPtrExpanded::U64(i));
             i += INC;
-            if i >= MAX {
+            if i >= MAX_U63 {
                 break;
             }
         }
@@ -158,7 +175,7 @@ mod tests {
             core::mem::forget(bx);
             let ptr = NonNull::new(ptr).unwrap();
 
-            let val = U63OrPtr::from_ptr(ptr, size_of::<u128>() as u16).unwrap();
+            let val = unsafe { U63OrPtr::from_ptr(ptr, size_of::<u128>() as u16).unwrap() };
             assert!(val.is_ptr());
 
             if let U63OrPtrExpanded::Ptr(expanded_ptr, expanded_size) = val.expand() {
