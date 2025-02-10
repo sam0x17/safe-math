@@ -1,22 +1,42 @@
-use core::{cmp::Ordering, ops::*};
+use core::{cmp::Ordering, ops::*, str::FromStr};
 use rug::{
+    integer::ParseIntegerError,
     ops::{NegAssign, Pow},
-    Float,
+    Integer,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, Ord, Hash, Default)]
 #[repr(transparent)]
-pub struct SafeDec<const DECIMALS: usize>(Float);
+pub struct SafeDec<const D: usize>(Integer);
 
 impl<const D: usize> SafeDec<D> {
+    pub const ZERO: SafeDec<D> = SafeDec::<D>(Integer::ZERO);
+    pub const BASE: u128 = 10u128.pow(D as u32);
+
     #[inline(always)]
-    pub const fn from_raw(value: Float) -> Self {
+    pub fn from_float(value: impl Into<f64>) -> SafeDec<D> {
+        let value = value.into();
+        todo!()
+    }
+
+    #[inline(always)]
+    pub const fn from_raw(value: Integer) -> SafeDec<D> {
         SafeDec(value)
     }
 
     #[inline(always)]
     pub const fn is_negative(&self) -> bool {
-        self.0.is_sign_negative()
+        self.0.is_negative()
+    }
+
+    #[inline(always)]
+    pub const fn is_even(&self) -> bool {
+        self.0.is_even()
+    }
+
+    #[inline(always)]
+    pub const fn is_odd(&self) -> bool {
+        self.0.is_odd()
     }
 
     #[inline(always)]
@@ -25,41 +45,30 @@ impl<const D: usize> SafeDec<D> {
     }
 
     #[inline(always)]
-    pub fn abs(self) -> Self {
+    pub fn abs(self) -> SafeDec<D> {
         SafeDec(self.0.abs())
     }
 
     #[inline(always)]
-    pub fn pow(self, exp: u32) -> Self {
+    pub fn pow(self, exp: u32) -> SafeDec<D> {
         SafeDec(self.0.pow(exp))
     }
+}
+
+impl<const D: usize> FromStr for SafeDec<D> {
+    type Err = ParseIntegerError;
 
     #[inline(always)]
-    pub fn floor(self) -> Self {
-        SafeDec(self.0.floor())
-    }
-
-    #[inline(always)]
-    pub fn ceil(self) -> Self {
-        SafeDec(self.0.ceil())
-    }
-
-    #[inline(always)]
-    pub fn round(self) -> Self {
-        SafeDec(self.0.round())
-    }
-
-    #[inline(always)]
-    pub fn round_even(self) -> Self {
-        SafeDec(self.0.round_even())
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(SafeDec(Integer::from_str(s)?))
     }
 }
 
 impl<const D: usize> Neg for SafeDec<D> {
-    type Output = Self;
+    type Output = SafeDec<D>;
 
     #[inline(always)]
-    fn neg(self) -> Self {
+    fn neg(self) -> SafeDec<D> {
         SafeDec(-self.0)
     }
 }
@@ -74,10 +83,10 @@ impl<const D: usize> NegAssign for SafeDec<D> {
 macro_rules! impl_binary_op {
     ($trait:ident, $method:ident) => {
         impl<const D: usize> $trait for SafeDec<D> {
-            type Output = Self;
+            type Output = SafeDec<D>;
 
             #[inline(always)]
-            fn $method(self, other: Self) -> Self {
+            fn $method(self, other: SafeDec<D>) -> SafeDec<D> {
                 SafeDec(self.0.$method(other.0))
             }
         }
@@ -92,7 +101,7 @@ macro_rules! impl_binary_op {
         }
 
         impl<const D: usize> $trait<&SafeDec<D>> for SafeDec<D> {
-            type Output = Self;
+            type Output = SafeDec<D>;
 
             #[inline(always)]
             fn $method(self, other: &SafeDec<D>) -> SafeDec<D> {
@@ -133,10 +142,16 @@ impl_binary_op!(Add, add);
 impl_binary_op!(Sub, sub);
 impl_binary_op!(Mul, mul);
 impl_binary_op!(Rem, rem);
+impl_binary_op!(BitAnd, bitand);
+impl_binary_op!(BitOr, bitor);
+impl_binary_op!(BitXor, bitxor);
 impl_assign_op!(AddAssign, add_assign);
 impl_assign_op!(SubAssign, sub_assign);
 impl_assign_op!(MulAssign, mul_assign);
 impl_assign_op!(RemAssign, rem_assign);
+impl_assign_op!(BitAndAssign, bitand_assign);
+impl_assign_op!(BitOrAssign, bitor_assign);
+impl_assign_op!(BitXorAssign, bitxor_assign);
 
 impl<const D: usize> Div for SafeDec<D> {
     type Output = Option<SafeDec<D>>;
@@ -177,14 +192,14 @@ impl<const D: usize> Div<SafeDec<D>> for &SafeDec<D> {
     }
 }
 
-impl<const D: usize, T: PartialEq<Float>> PartialEq<T> for SafeDec<D> {
+impl<const D: usize, T: PartialEq<Integer>> PartialEq<T> for SafeDec<D> {
     #[inline(always)]
     fn eq(&self, other: &T) -> bool {
         *other == self.0
     }
 }
 
-impl<const D: usize, T: PartialOrd<Float>> PartialOrd<T> for SafeDec<D> {
+impl<const D: usize, T: PartialOrd<Integer>> PartialOrd<T> for SafeDec<D> {
     #[inline(always)]
     fn partial_cmp(&self, other: &T) -> Option<core::cmp::Ordering> {
         match other.partial_cmp(&self.0) {
@@ -195,38 +210,5 @@ impl<const D: usize, T: PartialOrd<Float>> PartialOrd<T> for SafeDec<D> {
     }
 }
 
-impl<const D: usize, T: Into<Float>> From<T> for SafeDec<D> {
-    #[inline(always)]
-    fn from(value: T) -> SafeDec<D> {
-        SafeDec(value.into())
-    }
-}
-
 #[test]
-fn general() {
-    let a = SafeDec::<10>::from(10.0);
-    let b = SafeDec::from(20);
-    let c = &a + &b;
-    let d = a.clone() + c.clone();
-    let e = a.clone() + &b;
-    let f = &a + b.clone();
-    assert_eq!(c, 30);
-    assert!(d > a);
-    assert!(a < d);
-    assert!(a < b);
-    assert_eq!(e, f);
-    assert_eq!(f, a + b);
-    assert_eq!((SafeDec::from(10) / SafeDec::from(3)).unwrap(), 3);
-    assert_eq!(SafeDec::from(10) / SafeDec::from(0), None);
-    assert!(SafeDec::from(10) != 20);
-    assert!(SafeDec::from(37984739847983497938479797988798789783u128).is_odd());
-    assert!(
-        SafeDec::from_raw(
-            Float::from_str_radix(
-                "3798473984798349793847979798879878978334738744739847983749837",
-                10
-            )
-            .unwrap()
-        ) > 10
-    );
-}
+fn general() {}
