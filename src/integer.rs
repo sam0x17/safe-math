@@ -1,9 +1,11 @@
 use core::{
     cmp::Ordering,
     ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
+    str::FromStr,
 };
-
+use no_panic::no_panic;
 use rug::{
+    integer::ParseIntegerError,
     ops::{NegAssign, Pow},
     Integer,
 };
@@ -48,6 +50,75 @@ impl SafeInt {
     #[inline(always)]
     pub fn pow(self, exp: u32) -> SafeInt {
         SafeInt(self.0.pow(exp))
+    }
+
+    #[inline(always)]
+    pub fn to_u8(&self) -> Option<u8> {
+        self.0.to_u8()
+    }
+
+    #[inline(always)]
+    pub fn to_u16(&self) -> Option<u16> {
+        self.0.to_u16()
+    }
+
+    #[inline(always)]
+    pub fn to_u32(&self) -> Option<u32> {
+        self.0.to_u32()
+    }
+
+    #[inline(always)]
+    pub fn to_u64(&self) -> Option<u64> {
+        self.0.to_u64()
+    }
+
+    #[inline(always)]
+    pub fn to_u128(&self) -> Option<u128> {
+        self.0.to_u128()
+    }
+
+    #[inline(always)]
+    pub fn to_i8(&self) -> Option<i8> {
+        self.0.to_i8()
+    }
+
+    #[inline(always)]
+    pub fn to_i16(&self) -> Option<i16> {
+        self.0.to_i16()
+    }
+
+    #[inline(always)]
+    pub fn to_i32(&self) -> Option<i32> {
+        self.0.to_i32()
+    }
+
+    #[inline(always)]
+    pub fn to_i64(&self) -> Option<i64> {
+        self.0.to_i64()
+    }
+
+    #[inline(always)]
+    pub fn to_i128(&self) -> Option<i128> {
+        self.0.to_i128()
+    }
+
+    #[inline(always)]
+    pub fn to_usize(&self) -> Option<usize> {
+        self.0.to_usize()
+    }
+
+    #[inline(always)]
+    pub fn to_isize(&self) -> Option<isize> {
+        self.0.to_isize()
+    }
+}
+
+impl FromStr for SafeInt {
+    type Err = ParseIntegerError;
+
+    #[inline(always)]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(SafeInt(Integer::from_str(s)?))
     }
 }
 
