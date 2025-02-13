@@ -1,16 +1,33 @@
 use core::{cmp::Ordering, ops::*, str::FromStr};
+use quoth::Parsable;
 use rug::{
-    integer::ParseIntegerError,
     ops::{NegAssign, Pow},
     Integer,
 };
+
+use crate::parsing::ParsedSafeInt;
 
 #[derive(Clone, Debug, Eq, Ord, Hash, Default)]
 #[repr(transparent)]
 pub struct SafeInt(Integer);
 
+impl FromStr for SafeInt {
+    type Err = quoth::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut stream = quoth::ParseStream::from(s);
+        let parsed = ParsedSafeInt::parse(&mut stream)?;
+        Ok(parsed.value)
+    }
+}
+
 impl SafeInt {
     pub const ZERO: SafeInt = SafeInt(Integer::ZERO);
+
+    #[inline(always)]
+    pub const fn raw(&self) -> &Integer {
+        &self.0
+    }
 
     #[inline(always)]
     pub const fn from_raw(value: Integer) -> SafeInt {
@@ -105,15 +122,6 @@ impl SafeInt {
     #[inline(always)]
     pub fn to_isize(&self) -> Option<isize> {
         self.0.to_isize()
-    }
-}
-
-impl FromStr for SafeInt {
-    type Err = ParseIntegerError;
-
-    #[inline(always)]
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(SafeInt(Integer::from_str(s)?))
     }
 }
 

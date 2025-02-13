@@ -74,6 +74,48 @@ impl<const D: usize> Parsable for ParsedSafeDec<D> {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash, ParsableExt)]
+pub struct ParsedSafeInt {
+    pub value: SafeInt,
+    pub span: Span,
+}
+
+impl Spanned for ParsedSafeInt {
+    fn span(&self) -> Span {
+        self.span.clone()
+    }
+}
+
+impl Parsable for ParsedSafeInt {
+    fn parse(stream: &mut ParseStream) -> quoth::Result<Self> {
+        let start_position = stream.position;
+        let is_neg = if stream.next_char()? == '-' {
+            stream.consume(1)?;
+            true
+        } else {
+            false
+        };
+        let mut digits = Vec::new();
+        digits.push(stream.parse_digit()?);
+        while let Ok(digit) = stream.parse_digit() {
+            digits.push(digit);
+        }
+        let mut raw = SafeInt::from(0);
+        for &d in &digits {
+            raw *= 10;
+            raw += d;
+        }
+        if is_neg {
+            raw.neg_assign();
+        }
+        stream.parse::<Nothing>()?;
+        Ok(ParsedSafeInt {
+            value: raw,
+            span: Span::new(stream.source().clone(), start_position..stream.position),
+        })
+    }
+}
+
 #[test]
 fn test_parse_safe_dec_valid_same_digits() {
     let mut stream = ParseStream::from("-3487834.885");
@@ -125,4 +167,73 @@ fn test_parse_safe_dec_invalid_no_minor_digits() {
     stream.parse::<ParsedSafeDec<3>>().unwrap_err();
     let mut stream = ParseStream::from("7488793498789.");
     stream.parse::<ParsedSafeDec<0>>().unwrap_err();
+}
+
+#[test]
+fn test_parse_safe_int_valid_positive() {
+    assert_eq!(
+        ParseStream::from("123456")
+            .parse::<ParsedSafeInt>()
+            .unwrap()
+            .value,
+        123456
+    );
+    assert_eq!(
+        *ParseStream::from(
+            "112233445566778829879879823749798798982893947293749823798729387293849234"
+        )
+        .parse::<ParsedSafeInt>()
+        .unwrap()
+        .value
+        .raw(),
+        "112233445566778829879879823749798798982893947293749823798729387293849234"
+            .parse::<rug::Integer>()
+            .unwrap()
+    );
+    assert_eq!(
+        ParseStream::from("0")
+            .parse::<ParsedSafeInt>()
+            .unwrap()
+            .value,
+        0
+    );
+}
+
+#[test]
+fn test_parse_safe_int_valid_negative() {
+    assert_eq!(
+        ParseStream::from("-0")
+            .parse::<ParsedSafeInt>()
+            .unwrap()
+            .value,
+        0
+    );
+    assert_eq!(
+        ParseStream::from("-1")
+            .parse::<ParsedSafeInt>()
+            .unwrap()
+            .value,
+        -1
+    );
+    assert_eq!(
+        ParseStream::from("-98439874987948333035")
+            .parse::<ParsedSafeInt>()
+            .unwrap()
+            .value,
+        -98439874987948333035i128
+    );
+}
+
+#[test]
+fn test_parse_safe_int_invalid_decimal() {
+    ParseStream::from("123.456")
+        .parse::<ParsedSafeInt>()
+        .unwrap_err();
+}
+
+#[test]
+fn test_parse_safe_int_invalid_non_alpha() {
+    ParseStream::from("123a456")
+        .parse::<ParsedSafeInt>()
+        .unwrap_err();
 }
