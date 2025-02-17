@@ -1100,6 +1100,318 @@ impl Div<&SafeInt> for &SafeInt {
     }
 }
 
+impl Div<u8> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: u8) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<u16> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: u16) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<u32> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: u32) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<u64> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: u64) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<u128> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: u128) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<i8> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: i8) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<i16> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: i16) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<i32> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: i32) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<i64> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: i64) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<i128> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: i128) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<usize> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: usize) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<isize> for &SafeInt {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: isize) -> Option<SafeInt> {
+        if other == 0 {
+            None
+        } else {
+            Some(SafeInt(self.0.clone().div(other)))
+        }
+    }
+}
+
+impl Div<&SafeInt> for u8 {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for u16 {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for u32 {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for u64 {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for u128 {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for i8 {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for i16 {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for i32 {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for i64 {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for i128 {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for usize {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
+impl Div<&SafeInt> for isize {
+    type Output = Option<SafeInt>;
+
+    #[inline(always)]
+    fn div(self, other: &SafeInt) -> Option<SafeInt> {
+        if other.0.is_zero() {
+            None
+        } else {
+            Some(SafeInt(self.div(other.0.clone())))
+        }
+    }
+}
+
 impl<T: PartialEq<Integer>> PartialEq<T> for SafeInt {
     #[inline(always)]
     fn eq(&self, other: &T) -> bool {
@@ -1163,4 +1475,6 @@ fn general() {
     assert_eq!(SafeInt::from(5) / SafeInt::from(0), None);
     assert_eq!(5 / SafeInt::from(0), None);
     assert_eq!(SafeInt::from(5) / 0, None);
+    assert_eq!(&SafeInt::from(789) / 893797983, Some(SafeInt::from(0)));
+    assert_eq!(&SafeInt::from(28249) / SafeInt::ZERO, None);
 }
