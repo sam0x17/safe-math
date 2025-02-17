@@ -345,7 +345,6 @@ macro_rules! impl_binary_op {
 impl_binary_op!(Add, add);
 impl_binary_op!(Sub, sub);
 impl_binary_op!(Mul, mul);
-impl_binary_op!(Rem, rem);
 impl_binary_op!(BitAnd, bitand);
 impl_binary_op!(BitOr, bitor);
 impl_binary_op!(BitXor, bitxor);
