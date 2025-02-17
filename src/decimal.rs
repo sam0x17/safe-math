@@ -1,6 +1,7 @@
 use crate::{parsing::ParsedSafeDec, SafeInt};
 use core::{fmt::Display, ops::*, str::FromStr};
 use quoth::Parsable;
+use rug::ops::NegAssign;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(transparent)]
@@ -348,6 +349,38 @@ impl_binary_op!(Rem, rem);
 impl_binary_op!(BitAnd, bitand);
 impl_binary_op!(BitOr, bitor);
 impl_binary_op!(BitXor, bitxor);
+
+impl<const D: usize> Neg for SafeDec<D> {
+    type Output = SafeDec<D>;
+
+    #[inline(always)]
+    fn neg(self) -> SafeDec<D> {
+        SafeDec(-self.0)
+    }
+}
+
+impl<const D: usize> Neg for &SafeDec<D> {
+    type Output = SafeDec<D>;
+
+    #[inline(always)]
+    fn neg(self) -> SafeDec<D> {
+        SafeDec(-self.0.clone())
+    }
+}
+
+impl<const D: usize> NegAssign for SafeDec<D> {
+    #[inline(always)]
+    fn neg_assign(&mut self) {
+        self.0 = -self.0.clone();
+    }
+}
+
+impl<const D: usize> NegAssign for &mut SafeDec<D> {
+    #[inline(always)]
+    fn neg_assign(&mut self) {
+        self.0 = -self.0.clone();
+    }
+}
 
 #[cfg(test)]
 extern crate alloc;

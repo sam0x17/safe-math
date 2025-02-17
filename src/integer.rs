@@ -147,6 +147,22 @@ impl NegAssign for SafeInt {
     }
 }
 
+impl Neg for &SafeInt {
+    type Output = SafeInt;
+
+    #[inline(always)]
+    fn neg(self) -> SafeInt {
+        SafeInt(-self.0.clone())
+    }
+}
+
+impl NegAssign for &mut SafeInt {
+    #[inline(always)]
+    fn neg_assign(&mut self) {
+        self.0.neg_assign();
+    }
+}
+
 macro_rules! impl_binary_op {
     ($trait:ident, $method:ident) => {
         impl $trait for SafeInt {
