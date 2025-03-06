@@ -128,6 +128,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
+name = "eval-macro"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aff06b934ad6caf230c90e39e1e7292e1ef8b978e5688492299a1f3eb07f7a51"
+dependencies = [
+ "eval-macro-internal",
+]
+
+[[package]]
+name = "eval-macro-internal"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37a98a63b3ddf635d78695661ff8d7b362d85c68411524ba90d7da1c2cfad2a6"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
+]
+
+[[package]]
 name = "funty"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -438,6 +458,7 @@ checksum = "6ea1a2d0a644769cc99faa24c3ad26b379b786fe7c36fd3c546254801650e6dd"
 name = "safe-math"
 version = "0.0.1"
 dependencies = [
+ "eval-macro",
  "quoth",
  "rug",
 ]
