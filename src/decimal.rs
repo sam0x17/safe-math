@@ -446,7 +446,20 @@ eval! {
         }
         // SafeInt types
         for impl_type in ["SafeInt", "&SafeInt"] {
-            // todo
+            for op in ["Add", "Sub", "Mul", "BitAnd", "BitOr", "BitXor"] {
+                let method = op.to_lowercase();
+                let maybe_clone = if self_type == "&SafeDec<D>" { ".clone()" } else { "" };
+                output! {
+                    impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
+                        type Output = SafeDec<D>;
+
+                        #[inline(always)]
+                        fn {{method}}(self, other: {{self_type}}) -> SafeDec<D> {
+                            SafeDec(SafeDec::<D>::scale_up(&self).{{method}}(other.0{{maybe_clone}}))
+                        }
+                    }
+                }
+            }
         }
     }
 }
