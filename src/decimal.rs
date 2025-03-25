@@ -168,6 +168,29 @@ eval! {
                 let method = op.to_lowercase();
                 let maybe_clone = if self_type == "&SafeDec<D>" { ".clone()" } else { "" };
                 let impl_maybe_clone = if impl_type == "&SafeDec<D>" { ".clone()" } else { "" };
+                let test_name = format!(
+                    "test_{}_{}_{}",
+                    op.to_lowercase(),
+                    if self_type == "&SafeDec<D>" {
+                        "safe_dec_ref"
+                    } else {
+                        "safe_dec"
+                    },
+                    if impl_type == "&SafeDec<D>" {
+                        "safe_dec_ref"
+                    } else {
+                        "safe_dec"
+                    }
+                );
+                let expected_answer = match op {
+                    "Add" => 77,
+                    "Sub" => 53,
+                    "Mul" => 780,
+                    "BitXor" => 77,
+                    "BitOr" => 77,
+                    "BitAnd" => 0,
+                    _ => unreachable!(),
+                };
                 output! {
                     impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
                         type Output = SafeDec<D>;
@@ -176,6 +199,14 @@ eval! {
                         fn {{method}}(self, other: {{self_type}}) -> SafeDec<D> {
                             SafeDec(self{{impl_maybe_clone}}.0.{{method}}(other.0{{maybe_clone}}))
                         }
+                    }
+
+                    #[test]
+                    fn {{test_name}}() {
+                        let a = SafeDec::<3>::from_raw(12);
+                        let b = SafeDec::<3>::from_raw(65);
+                        let c = b.{{method}}(a);
+                        assert_eq!(c.0, SafeInt::from({{expected_answer}}));
                     }
                 }
             }
