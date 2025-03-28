@@ -505,6 +505,36 @@ impl<const D: usize> Div<&SafeDec<D>> for &SafeInt {
     }
 }
 
+impl<const D: usize, O> AddAssign<O> for SafeDec<D>
+where
+    SafeDec<D>: Add<O, Output = SafeDec<D>>,
+{
+    #[inline(always)]
+    fn add_assign(&mut self, rhs: O) {
+        *self = self.clone() + rhs;
+    }
+}
+
+impl<const D: usize, O> MulAssign<O> for SafeDec<D>
+where
+    SafeDec<D>: Mul<O, Output = SafeDec<D>>,
+{
+    #[inline(always)]
+    fn mul_assign(&mut self, rhs: O) {
+        *self = self.clone() * rhs;
+    }
+}
+
+impl<const D: usize, O> SubAssign<O> for SafeDec<D>
+where
+    SafeDec<D>: Sub<O, Output = SafeDec<D>>,
+{
+    #[inline(always)]
+    fn sub_assign(&mut self, rhs: O) {
+        *self = self.clone() - rhs;
+    }
+}
+
 #[cfg(test)]
 extern crate alloc;
 #[cfg(test)]
@@ -522,28 +552,37 @@ fn test_safe_dec_from_str() {
 fn test_safe_dec_add() {
     let a = "123.456".parse::<SafeDec<3>>().unwrap();
     let b = "654.321".parse::<SafeDec<3>>().unwrap();
-    let c = a + b;
+    let c = a.clone() + b;
     assert_eq!(c.0, SafeInt::from(123456 + 654321));
     assert_eq!(c.to_string().as_str(), "777.777");
     assert_eq!(c, SafeDec::from_raw(777777));
+    let mut d = c;
+    d += a;
+    assert_eq!(d.to_string().as_str(), "901.233");
 }
 
 #[test]
 fn test_safe_dec_sub() {
     let a = "123.456".parse::<SafeDec<3>>().unwrap();
     let b = "654.321".parse::<SafeDec<3>>().unwrap();
-    let c = a - b;
+    let c = a.clone() - b;
     assert_eq!(c.0, SafeInt::from(123456 - 654321));
     assert_eq!(c.to_string().as_str(), "-530.865");
     assert_eq!(c, SafeDec::from_raw(-530865));
+    let mut d = c;
+    d -= a;
+    assert_eq!(d.to_string().as_str(), "-654.321");
 }
 
 #[test]
 fn test_safe_dec_mul() {
     let a = "123.456".parse::<SafeDec<3>>().unwrap();
     let b = "654.321".parse::<SafeDec<3>>().unwrap();
-    let c = a * b;
+    let c = a.clone() * b;
     assert_eq!(c.to_string().as_str(), "80779.853");
+    let mut d = c;
+    d *= a;
+    assert_eq!(d.to_string().as_str(), "9972757.531");
     let a = 4u64;
     let b = "-247.842".parse::<SafeDec<3>>().unwrap();
     let c = a * b;
