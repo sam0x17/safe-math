@@ -71,6 +71,12 @@ impl SafeInt {
     }
 
     #[inline(always)]
+    pub fn div_rem(self, other: SafeInt) -> (SafeInt, SafeInt) {
+        let (div, rem) = self.0.div_rem(other.0);
+        (SafeInt(div), SafeInt(rem))
+    }
+
+    #[inline(always)]
     pub fn to_u8(&self) -> Option<u8> {
         self.0.to_u8()
     }
