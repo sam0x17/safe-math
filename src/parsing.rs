@@ -1,6 +1,6 @@
 use quoth::{
-    parsable::{Exact, Nothing},
     Parsable, ParsableExt, ParseStream, Span, Spanned,
+    parsable::{Exact, Nothing},
 };
 use rug::ops::NegAssign;
 
