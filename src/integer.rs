@@ -1579,7 +1579,7 @@ impl ConstSafeInt<17> {
         let value = if value == i128::MIN {
             i128::MAX as u128 + 1
         } else {
-            value.abs() as u128
+            value.unsigned_abs()
         };
         let mut res = Self::from_u128(value);
         if is_neg {
@@ -1603,7 +1603,7 @@ impl ConstSafeInt<17> {
 impl<const N: usize> From<ConstSafeInt<N>> for SafeInt {
     #[inline(always)]
     fn from(value: ConstSafeInt<N>) -> SafeInt {
-        let pos = value.0.get(0).cloned().unwrap_or(0) == 0;
+        let pos = value.0.first().cloned().unwrap_or(0) == 0;
         let mut res = SafeInt(Integer::from_digits(&value.0[1..], Order::MsfBe));
         if !pos {
             res *= -1;
@@ -1615,7 +1615,7 @@ impl<const N: usize> From<ConstSafeInt<N>> for SafeInt {
 impl<const N: usize> From<&ConstSafeInt<N>> for SafeInt {
     #[inline(always)]
     fn from(value: &ConstSafeInt<N>) -> SafeInt {
-        let pos = value.0.get(0).cloned().unwrap_or(0) == 0;
+        let pos = value.0.first().cloned().unwrap_or(0) == 0;
         let mut res = SafeInt(Integer::from_digits(&value.0[1..], Order::MsfBe));
         if !pos {
             res *= -1;
