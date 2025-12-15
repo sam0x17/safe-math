@@ -47,3 +47,23 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
       - name: Build for wasm32
         run: cargo build --target wasm32-unknown-unknown --no-default-features
+  wasm-test-no-features:
+    name: wasm test (no features)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Add wasm target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Compile tests for wasm (no default features)
+        run: cargo test --target wasm32-unknown-unknown --no-default-features --no-run
+  wasm-test-all-features:
+    name: wasm test (all features)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Add wasm target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Compile tests for wasm (all features)
+        run: cargo test --target wasm32-unknown-unknown --all-features --no-run
