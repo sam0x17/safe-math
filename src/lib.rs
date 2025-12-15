@@ -1,10 +1,12 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 //! Safe, non-panicking numeric primitives built on top of pure-Rust `num-bigint` (alloc-only).
+//!
+//! Enable the `std` feature to opt into `std` support for downstream consumers.
 
 extern crate alloc;
 
-#[cfg(test)]
+#[cfg(any(test, feature = "std"))]
 extern crate std;
 
 /// Fixed-precision decimal support built on `SafeInt`.
