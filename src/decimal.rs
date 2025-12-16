@@ -4,7 +4,6 @@ use crate::{SafeInt, parsing::ParsedSafeDec};
 #[cfg(test)]
 use alloc::string::ToString;
 use core::{fmt::Display, ops::*, str::FromStr};
-use eval_macro::eval;
 use quoth::Parsable;
 
 /// Fixed-point decimal built on top of `SafeInt` with `D` fractional digits.
@@ -128,8 +127,9 @@ impl<const D: usize> Neg for &SafeDec<D> {
     }
 }
 
-eval! {
-    for self_type in ["SafeDec<D>","&SafeDec<D>"] {
+#[crabtime::function]
+fn gen_decimal_ops() {
+    for self_type in ["SafeDec<D>", "&SafeDec<D>"] {
         // integer primitives
         for impl_type in [
             "u8",
@@ -166,7 +166,7 @@ eval! {
                     "BitAnd" => 8,
                     _ => unreachable!(),
                 };
-                output! {
+                crabtime::output! {
                     impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
                         type Output = SafeDec<D>;
 
@@ -199,7 +199,7 @@ eval! {
                     impl_type.to_lowercase()
                 );
                 let expected_answer = 780;
-                output! {
+                crabtime::output! {
                     impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
                         type Output = SafeDec<D>;
 
@@ -247,7 +247,7 @@ eval! {
                     "BitAnd" => 0,
                     _ => unreachable!(),
                 };
-                output! {
+                crabtime::output! {
                     impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
                         type Output = SafeDec<D>;
 
@@ -294,7 +294,7 @@ eval! {
                     "BitAnd" => 0,
                     _ => unreachable!(),
                 };
-                output! {
+                crabtime::output! {
                     impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
                         type Output = SafeDec<D>;
 
@@ -331,7 +331,7 @@ eval! {
                     }
                 );
                 let expected_answer = 0;
-                output! {
+                crabtime::output! {
                     impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
                         type Output = SafeDec<D>;
 
@@ -354,8 +354,11 @@ eval! {
     }
 }
 
-eval! {
-    for self_type in ["SafeDec<D>","&SafeDec<D>"] {
+gen_decimal_ops!();
+
+#[crabtime::function]
+fn gen_decimal_divs() {
+    for self_type in ["SafeDec<D>", "&SafeDec<D>"] {
         // integer primitives
         for impl_type in [
             "u8",
@@ -381,7 +384,7 @@ eval! {
                 },
                 impl_type.to_lowercase()
             );
-            output! {
+            crabtime::output! {
                 impl<const D: usize> Div<{{self_type}}> for {{impl_type}} {
                     type Output = Option<SafeDec<D>>;
 
@@ -402,6 +405,8 @@ eval! {
         }
     }
 }
+
+gen_decimal_divs!();
 
 impl<const D: usize> Mul for SafeDec<D> {
     type Output = SafeDec<D>;
