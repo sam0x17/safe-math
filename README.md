@@ -1,11 +1,11 @@
-# safe-math
+# safe-bigmath
 
-[![Crates.io](https://img.shields.io/crates/v/safe-math.svg)](https://crates.io/crates/safe-math)
-[![Docs](https://docs.rs/safe-math/badge.svg)](https://docs.rs/safe-math)
-[![CI](https://github.com/sam0x17/safe-math/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/sam0x17/safe-math/actions/workflows/ci.yaml)
+[![Crates.io](https://img.shields.io/crates/v/safe-bigmath.svg)](https://crates.io/crates/safe-bigmath)
+[![Docs](https://docs.rs/safe-bigmath/badge.svg)](https://docs.rs/safe-bigmath)
+[![CI](https://github.com/sam0x17/safe-bigmath/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/sam0x17/safe-bigmath/actions/workflows/ci.yaml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Safe, non-panicking numeric primitives built on pure-Rust `num-bigint`. `safe-math` gives you:
+Safe, non-panicking numeric primitives built on pure-Rust `num-bigint`. `safe-bigmath` gives you:
 
 - `SafeInt`: arbitrary-precision integers with ergonomic operator overloads.
 - `SafeDec<D>`: fixed-scale decimals backed by arbitrary-precision `SafeInt`; the const generic `D` sets how many decimal places are stored exactly.
@@ -17,16 +17,16 @@ Safe, non-panicking numeric primitives built on pure-Rust `num-bigint`. `safe-ma
 
 ```toml
 [dependencies]
-safe-math = "0.0.1"
+safe-bigmath = "0.1.0"
 
 # Optional: enable std support
-# safe-math = { version = "0.0.1", features = ["std"] }
+# safe-bigmath = { version = "0.1.0", features = ["std"] }
 ```
 
 ### Safe integers
 
 ```rust
-use safe_math::SafeInt;
+use safe_bigmath::SafeInt;
 
 let a = SafeInt::from(10);
 let b = SafeInt::from(3);
@@ -39,7 +39,7 @@ assert_eq!(SafeInt::from(5) / SafeInt::from(0), None); // no panic on zero div
 ### Fixed-scale decimals
 
 ```rust
-use safe_math::SafeDec;
+use safe_bigmath::SafeDec;
 
 let price: SafeDec<2> = "12.50".parse().unwrap();
 let qty: SafeDec<2> = "3.00".parse().unwrap();
@@ -53,7 +53,7 @@ assert_eq!(total.to_string(), "37.50");
 Compute `(x / (x + dx))^(w1 / w2)` scaled to perquintill:
 
 ```rust
-use safe_math::SafeInt;
+use safe_bigmath::SafeInt;
 
 let x = SafeInt::from(21_000_000_000_000_000u64);
 let dx = SafeInt::from(7_000_000_000_000_000u64);

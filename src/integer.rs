@@ -16,7 +16,7 @@ use crate::parsing::ParsedSafeInt;
 /// # Examples
 /// Create values from primitives and perform safe division (returns `Option` to avoid panics):
 /// ```
-/// use safe_math::SafeInt;
+/// use safe_bigmath::SafeInt;
 ///
 /// let a = SafeInt::from(10);
 /// let b = SafeInt::from(3);
@@ -202,7 +202,7 @@ impl SafeInt {
     ///
     /// # Examples
     /// ```rust
-    /// use safe_math::SafeInt;
+    /// use safe_bigmath::SafeInt;
     ///
     /// // (2 / 3) ^ (1 / 2) * 1000 (approx) => 816 when floored
     /// let result = SafeInt::pow_ratio_scaled(
@@ -766,8 +766,8 @@ impl_prim_cmp!(
 ///
 /// # Examples
 /// ```
-/// use safe_math::integer::ConstSafeInt;
-/// use safe_math::SafeInt;
+/// use safe_bigmath::integer::ConstSafeInt;
+/// use safe_bigmath::SafeInt;
 ///
 /// const ONE: ConstSafeInt<2> = ConstSafeInt::from_bytes([0, 1]);
 /// assert_eq!(SafeInt::from(ONE), SafeInt::from(1));
@@ -798,8 +798,8 @@ impl ConstSafeInt<17> {
     ///
     /// # Examples
     /// ```
-    /// use safe_math::integer::ConstSafeInt;
-    /// use safe_math::SafeInt;
+    /// use safe_bigmath::integer::ConstSafeInt;
+    /// use safe_bigmath::SafeInt;
     ///
     /// const NEG_ONE: ConstSafeInt<17> = ConstSafeInt::from_i128(-1);
     /// assert_eq!(SafeInt::from(NEG_ONE), SafeInt::from(-1));

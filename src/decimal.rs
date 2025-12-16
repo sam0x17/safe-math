@@ -10,7 +10,7 @@ use quoth::Parsable;
 ///
 /// # Examples
 /// ```
-/// use safe_math::SafeDec;
+/// use safe_bigmath::SafeDec;
 ///
 /// // 3 decimal places
 /// let a: SafeDec<3> = "1.500".parse().unwrap();
@@ -40,7 +40,7 @@ impl<const D: usize> SafeDec<D> {
     ///
     /// # Examples
     /// ```
-    /// use safe_math::SafeDec;
+    /// use safe_bigmath::SafeDec;
     ///
     /// let raw = 123_456; // represents 123.456 at 3 decimal places
     /// let dec = SafeDec::<3>::from_raw(raw);
@@ -54,7 +54,7 @@ impl<const D: usize> SafeDec<D> {
     ///
     /// # Examples
     /// ```
-    /// use safe_math::SafeDec;
+    /// use safe_bigmath::SafeDec;
     ///
     /// let a: SafeDec<4> = "1.2345".parse().unwrap();
     /// let b = SafeDec::<2>::from_other_scale(a);

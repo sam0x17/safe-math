@@ -3,15 +3,15 @@ default = []
 std = ["num-bigint/std", "num-traits/std", "num-integer/std"]
 
 [package]
-name = "safe-math"
+name = "safe-bigmath"
 version = "0.1.0"
 edition = "2024"
 authors = ["sam0x17"]
 license = "MIT"
 description = "Provides non-overflowing, non-panicking numeric types as well as safe big integer and decimal that can scale to any size safely and gracefully, only wasting memory when extra precision is needed"
-keywords = ["biginteger", "decimal", "money", "safe", "math"]
-documentation = "https://docs.rs/safe-math"
-repository = "https://github.com/sam0x17/safe-math"
+keywords = ["biginteger", "decimal", "bigmath", "safe", "math"]
+documentation = "https://docs.rs/safe-bigmath"
+repository = "https://github.com/sam0x17/safe-bigmath"
 [dependencies]
 quoth = "0.2"
 crabtime = "1"
