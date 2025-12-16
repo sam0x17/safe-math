@@ -31,6 +31,7 @@ pub struct SafeInt(BigInt);
 /// Default iteration cap for the fixed-point approximation used by `pow_ratio_scaled` when
 /// large exponents require the fallback path.
 pub const DEFAULT_MAX_ITERS: usize = 4_096;
+const MAX_EXACT_EXPONENT: u32 = 1_024;
 
 impl FromStr for SafeInt {
     type Err = quoth::Error;
@@ -203,7 +204,8 @@ impl SafeInt {
     /// Computes `(base_numerator / base_denominator)^(exponent_numerator / exponent_denominator)`
     /// scaled by the provided factor. Returns `None` if the base or exponent denominator is zero
     /// or if the base is non-positive. Uses an exact integer path when the exponent fits in 32
-    /// bits and falls back to a fixed-point approximation with the requested precision otherwise.
+    /// bits and is below `MAX_EXACT_EXPONENT`, and falls back to a fixed-point approximation with
+    /// the requested precision otherwise.
     /// The fallback uses `DEFAULT_MAX_ITERS` as its iteration cap and stops earlier once rounded
     /// digits converge.
     ///
@@ -294,15 +296,17 @@ impl SafeInt {
                 return None;
             }
 
-            let base_num_pow = base_num.pow(exp_num_u32);
-            let base_den_pow = base_den.pow(exp_num_u32);
-            let scale_pow = scale_abs.pow(exp_den_u32);
+            if exp_num_u32 <= MAX_EXACT_EXPONENT {
+                let base_num_pow = base_num.pow(exp_num_u32);
+                let base_den_pow = base_den.pow(exp_num_u32);
+                let scale_pow = scale_abs.pow(exp_den_u32);
 
-            let target_num = base_num_pow * scale_pow;
-            let target_den = base_den_pow;
+                let target_num = base_num_pow * scale_pow;
+                let target_den = base_den_pow;
 
-            let root = nth_root_ratio_floor(&target_num, &target_den, exp_den_u32);
-            return Some(SafeInt(BigInt::from_biguint(Sign::Plus, root)));
+                let root = nth_root_ratio_floor(&target_num, &target_den, exp_den_u32);
+                return Some(SafeInt(BigInt::from_biguint(Sign::Plus, root)));
+            }
         }
 
         // Fallback path for large exponents: approximate using fixed-point log/exp with guard bits.
@@ -311,7 +315,8 @@ impl SafeInt {
         let requested_precision = precision.max(32);
         let guard_bits: u32 = 16;
         let internal_precision = requested_precision.saturating_add(guard_bits);
-        let max_iters = max_iters.unwrap_or(DEFAULT_MAX_ITERS).max(1);
+        let default_max_iters = DEFAULT_MAX_ITERS.min(internal_precision as usize + 128);
+        let max_iters = max_iters.unwrap_or(default_max_iters).max(1);
 
         let target_scale_uint = BigUint::one() << requested_precision;
         let guard_factor_uint = BigUint::one() << guard_bits;
@@ -400,7 +405,7 @@ fn nth_root_ratio_floor(target_num: &BigUint, target_den: &BigUint, q: u32) -> B
 
 fn ln1p_fixed(x_fp: &BigInt, scale: &BigInt, guard_factor: &BigInt, max_iters: usize) -> BigInt {
     // Fixed-point natural log using the Taylor series for ln(1 + x), stopping once the rounded
-    // value at the target precision stops changing.
+    // value at the target precision stops changing or the incremental term is below guard bits.
     let mut term = x_fp.clone();
     let mut result = term.clone();
     let mut prev_rounded = round_to_precision(&result, guard_factor);
@@ -422,7 +427,7 @@ fn ln1p_fixed(x_fp: &BigInt, scale: &BigInt, guard_factor: &BigInt, max_iters: u
         }
 
         let rounded = round_to_precision(&result, guard_factor);
-        if rounded == prev_rounded && next.abs() < guard_factor.abs() {
+        if next.abs() < guard_factor.abs() || rounded == prev_rounded {
             break;
         }
         prev_rounded = rounded;
@@ -433,7 +438,7 @@ fn ln1p_fixed(x_fp: &BigInt, scale: &BigInt, guard_factor: &BigInt, max_iters: u
 
 fn exp_fixed(x_fp: &BigInt, scale: &BigInt, guard_factor: &BigInt, max_iters: usize) -> BigInt {
     // Fixed-point exponential using the Taylor series for exp(x), stopping once rounded digits
-    // stabilize at the target precision.
+    // stabilize at the target precision or the incremental term is below guard bits.
     let mut term = scale.clone(); // 1.0 in fixed-point space
     let mut result = term.clone();
     let mut prev_rounded = round_to_precision(&result, guard_factor);
@@ -445,7 +450,7 @@ fn exp_fixed(x_fp: &BigInt, scale: &BigInt, guard_factor: &BigInt, max_iters: us
         result += &term;
 
         let rounded = round_to_precision(&result, guard_factor);
-        if rounded == prev_rounded && term.abs() < guard_factor.abs() {
+        if term.abs() < guard_factor.abs() || rounded == prev_rounded {
             break;
         }
         prev_rounded = rounded;
@@ -1143,6 +1148,27 @@ fn pow_ratio_scaled_handles_large_weight_denominators() {
             SafeInt::pow_ratio_scaled(&x, &denominator, &w1, &w2, 256, &perquintill).unwrap();
         assert_eq!(result, SafeInt::from(999_999_999_999_995_238i128));
     }
+}
+
+#[test]
+fn pow_ratio_scaled_converges_on_boundary_weights() {
+    let x = SafeInt::from(21_000_000_000_000_000i128);
+    let denominator = SafeInt::from(21_000_000_000_000_001i128);
+    let w1 = SafeInt::from(499_999_999_500_000_000i128);
+    let w2 = SafeInt::from(500_000_000_500_000_000i128);
+    let scale = SafeInt::from(1_000_000_000_000_000_000i128);
+    let precision = 256u32;
+
+    let start = std::time::Instant::now();
+    let result = SafeInt::pow_ratio_scaled(&x, &denominator, &w1, &w2, precision, &scale).unwrap();
+    let elapsed = start.elapsed();
+
+    assert_eq!(result, SafeInt::from(999_999_999_999_999_952i128));
+    assert!(
+        elapsed < core::time::Duration::from_secs(1),
+        "pow_ratio_scaled took {:?}",
+        elapsed
+    );
 }
 
 #[test]
