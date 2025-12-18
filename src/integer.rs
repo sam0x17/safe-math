@@ -350,12 +350,49 @@ impl SafeInt {
             return Some(SafeInt::zero());
         }
 
+        // Shift the ratio toward 1.0 using powers of two to improve ln1p convergence for very
+        // small bases (e.g. 0.1). We compute ln(ratio) = ln(ratio * 2^shift) - shift * ln(2).
+        let mut shift: usize = {
+            let num_bits = log_num.bits();
+            if num_bits == 0 {
+                0
+            } else {
+                log_den.bits().saturating_sub(num_bits) as usize
+            }
+        };
+        while shift > 0 && (&log_num << shift) >= log_den {
+            shift -= 1;
+        }
+        while (&log_num << shift) < (log_den.clone() >> 1) {
+            let next_shift = shift.saturating_add(1);
+            if (&log_num << next_shift) >= log_den {
+                break;
+            }
+            shift = next_shift;
+        }
+        let adjusted_num = &log_num << shift;
+
+        let (mut adjusted_ratio, adjusted_remainder) =
+            (&adjusted_num << internal_precision).div_rem(&log_den);
+        if !adjusted_remainder.is_zero() && (adjusted_remainder << 1) >= log_den {
+            adjusted_ratio += BigUint::one();
+        }
         let mut ln_base = ln1p_fixed(
-            &(BigInt::from_biguint(Sign::Plus, ratio_scaled.clone()) - &internal_scale),
+            &(BigInt::from_biguint(Sign::Plus, adjusted_ratio) - &internal_scale),
             &internal_scale,
             &guard_factor,
             max_iters,
         );
+        if shift > 0 {
+            let ln_half = ln1p_fixed(
+                &(-(&internal_scale >> 1usize)),
+                &internal_scale,
+                &guard_factor,
+                max_iters,
+            );
+            let ln_two = -ln_half;
+            ln_base -= ln_two * BigInt::from(shift as u64);
+        }
         if invert_ratio {
             ln_base = -ln_base;
         }
@@ -1251,6 +1288,29 @@ fn pow_ratio_scaled_uses_scale_to_pick_precision() {
     assert!(
         delta <= SafeInt::from(1u32),
         "coarse {coarse} vs precise {precise} differed by {delta}"
+    );
+}
+
+#[test]
+fn pow_ratio_scaled_handles_small_base_fractional_exponent() {
+    // Base far from 1 with a fractional exponent; previously this would under-approximate badly.
+    let base_num = SafeInt::from(1u8);
+    let base_den = SafeInt::from(10u8);
+    let exp_num = SafeInt::from(500_000_000_001u64);
+    let exp_den = SafeInt::from(1_000_000_000_000u64);
+    let scale = SafeInt::from(1_000_000_000_000_000_000u128);
+    let precision = 128u32;
+
+    let result =
+        SafeInt::pow_ratio_scaled(&base_num, &base_den, &exp_num, &exp_den, precision, &scale)
+            .expect("small base fractional exponent");
+    let expected =
+        ((0.1f64).powf(0.500000000001f64) * 1_000_000_000_000_000_000f64).floor() as u128;
+    let delta = (result.clone() - SafeInt::from(expected)).abs();
+
+    assert!(
+        delta <= SafeInt::from(128u32),
+        "result {result} vs expected {expected} (delta {delta})"
     );
 }
 
