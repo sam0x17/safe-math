@@ -201,6 +201,17 @@ impl SafeInt {
         Some(((self - one.clone()) / b)? + one)
     }
 
+    /// Performs integer division (`self / b`) with division by zero check.
+    /// Returns None for division by zero
+    #[inline(always)]
+    pub fn checked_div(&self, b: SafeInt) -> Option<SafeInt> {
+        if !b.is_zero() {
+            Some((self / b)?)
+        } else {
+            None
+        }
+    }
+
     /// Computes `(base_numerator / base_denominator)^(exponent_numerator / exponent_denominator)`
     /// scaled by the provided factor. Returns `None` if the base or exponent denominator is zero
     /// or if the base is non-positive. Uses an exact integer path when the exponent fits in 32
@@ -1501,4 +1512,42 @@ fn test_zero() {
 fn test_one() {
     let one = SafeInt::one();
     assert_eq!(one, 1);
+}
+
+#[test]
+fn test_checked_div() {
+    assert_eq!(
+        SafeInt::from(1).checked_div(SafeInt::from(1)),
+        Some(SafeInt::from(1))
+    );
+    assert_eq!(SafeInt::from(1).checked_div(SafeInt::from(0)), None);
+    assert_eq!(SafeInt::from(0).checked_div(SafeInt::from(0)), None);
+    assert_eq!(
+        SafeInt::from(0).checked_div(SafeInt::from(1)),
+        Some(SafeInt::from(0))
+    );
+    assert_eq!(
+        SafeInt::from(u64::MAX).checked_div(SafeInt::from(2)),
+        Some(SafeInt::from(u64::MAX / 2))
+    );
+    assert_eq!(
+        SafeInt::from(7).checked_div(SafeInt::from(2)),
+        Some(SafeInt::from(3))
+    );
+    let u64max = SafeInt::from(u64::MAX);
+    assert_eq!(
+        (u64max.clone() * u64max.clone() * u64max.clone() * u64max.clone())
+            .checked_div(u64max.clone()),
+        Some(u64max.clone() * u64max.clone() * u64max.clone())
+    );
+    assert_eq!(
+        (u64max.clone() * u64max.clone() * u64max.clone() * u64max.clone())
+            .checked_div(SafeInt::from(5)),
+        Some(u64max.clone() * u64max.clone() * u64max.clone() * SafeInt::from(u64::MAX / 5))
+    );
+    assert_eq!(
+        (u64max.clone() * u64max.clone() * u64max.clone() * u64max.clone())
+            .checked_div(SafeInt::from(0)),
+        None
+    );
 }
