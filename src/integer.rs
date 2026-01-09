@@ -202,17 +202,13 @@ impl SafeInt {
     }
 
     /// Performs integer division (`self / b`) with division by zero check.
-    /// Returns 0 for division by zero
+    /// Returns None for division by zero
     #[inline(always)]
-    pub fn safe_div(&self, b: SafeInt) -> SafeInt {
+    pub fn checked_div(&self, b: SafeInt) -> Option<SafeInt> {
         if !b.is_zero() {
-            if let Some(result) = self / b {
-                result
-            } else {
-                SafeInt::from(0)
-            }
+            Some((self / b)?)
         } else {
-            SafeInt::from(0)
+            None
         }
     }
 
@@ -1516,4 +1512,32 @@ fn test_zero() {
 fn test_one() {
     let one = SafeInt::one();
     assert_eq!(one, 1);
+}
+
+#[test]
+fn test_checked_div() {
+    assert_eq!(
+        SafeInt::from(1).checked_div(SafeInt::from(1)),
+        Some(SafeInt::from(1))
+    );
+    assert_eq!(
+        SafeInt::from(1).checked_div(SafeInt::from(0)),
+        None
+    );
+    assert_eq!(
+        SafeInt::from(0).checked_div(SafeInt::from(0)),
+        None
+    );
+    assert_eq!(
+        SafeInt::from(0).checked_div(SafeInt::from(1)),
+        Some(SafeInt::from(0))
+    );
+    assert_eq!(
+        SafeInt::from(u64::MAX).checked_div(SafeInt::from(2)),
+        Some(SafeInt::from(u64::MAX / 2))
+    );
+    assert_eq!(
+        SafeInt::from(7).checked_div(SafeInt::from(2)),
+        Some(SafeInt::from(3))
+    );
 }
