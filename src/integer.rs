@@ -201,6 +201,17 @@ impl SafeInt {
         Some(((self - one.clone()) / b)? + one)
     }
 
+    /// Performs integer division (`self / b`) with division by zero check.
+    /// Returns 0 for division by zero
+    #[inline(always)]
+    pub fn safe_div(&self, b: SafeInt) -> SafeInt {
+        if let Some(result) = self / b {
+            result
+        } else {
+            SafeInt::from(0)
+        }
+    }
+
     /// Computes `(base_numerator / base_denominator)^(exponent_numerator / exponent_denominator)`
     /// scaled by the provided factor. Returns `None` if the base or exponent denominator is zero
     /// or if the base is non-positive. Uses an exact integer path when the exponent fits in 32
