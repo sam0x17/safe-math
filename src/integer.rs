@@ -205,8 +205,12 @@ impl SafeInt {
     /// Returns 0 for division by zero
     #[inline(always)]
     pub fn safe_div(&self, b: SafeInt) -> SafeInt {
-        if let Some(result) = self / b {
-            result
+        if !b.is_zero() {
+            if let Some(result) = self / b {
+                result
+            } else {
+                SafeInt::from(0)
+            }
         } else {
             SafeInt::from(0)
         }
