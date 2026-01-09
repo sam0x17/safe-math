@@ -1520,14 +1520,8 @@ fn test_checked_div() {
         SafeInt::from(1).checked_div(SafeInt::from(1)),
         Some(SafeInt::from(1))
     );
-    assert_eq!(
-        SafeInt::from(1).checked_div(SafeInt::from(0)),
-        None
-    );
-    assert_eq!(
-        SafeInt::from(0).checked_div(SafeInt::from(0)),
-        None
-    );
+    assert_eq!(SafeInt::from(1).checked_div(SafeInt::from(0)), None);
+    assert_eq!(SafeInt::from(0).checked_div(SafeInt::from(0)), None);
     assert_eq!(
         SafeInt::from(0).checked_div(SafeInt::from(1)),
         Some(SafeInt::from(0))
@@ -1539,5 +1533,16 @@ fn test_checked_div() {
     assert_eq!(
         SafeInt::from(7).checked_div(SafeInt::from(2)),
         Some(SafeInt::from(3))
+    );
+    let u64max = SafeInt::from(u64::MAX);
+    assert_eq!(
+        (u64max.clone() * u64max.clone() * u64max.clone() * u64max.clone())
+            .checked_div(u64max.clone()),
+        Some(u64max.clone() * u64max.clone() * u64max.clone())
+    );
+    assert_eq!(
+        (u64max.clone() * u64max.clone() * u64max.clone() * u64max.clone())
+            .checked_div(SafeInt::from(5)),
+        Some(u64max.clone() * u64max.clone() * u64max.clone() * SafeInt::from(u64::MAX / 5))
     );
 }
