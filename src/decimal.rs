@@ -127,292 +127,587 @@ impl<const D: usize> Neg for &SafeDec<D> {
     }
 }
 
-#[crabtime::function]
-fn gen_decimal_ops() {
-    for self_type in ["SafeDec<D>", "&SafeDec<D>"] {
-        // integer primitives
-        for impl_type in [
-            "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "usize", "isize",
-        ] {
-            for op in ["Add", "Sub", "BitAnd", "BitOr", "BitXor"] {
-                let method = op.to_lowercase();
-                let maybe_clone = if self_type == "&SafeDec<D>" {
-                    ".clone()"
-                } else {
-                    ""
-                };
-                let test_name = format!(
-                    "test_{}_{}_{}",
-                    op.to_lowercase(),
-                    if self_type == "&SafeDec<D>" {
-                        "safe_dec_ref"
-                    } else {
-                        "safe_dec"
-                    },
-                    impl_type.to_lowercase()
-                );
-                let expected_answer = match op {
-                    "Add" => 65012,
-                    "Sub" => 64988,
-                    "BitXor" => 64996,
-                    "BitOr" => 65004,
-                    "BitAnd" => 8,
-                    _ => unreachable!(),
-                };
-                crabtime::output! {
-                    impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
-                        type Output = SafeDec<D>;
+macro_rules! impl_decimal_ops_for_primitive {
+    ($prim:ty, rhs_value) => {
+        impl<const D: usize> Add<SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
 
-                        #[inline(always)]
-                        fn {{method}}(self, other: {{self_type}}) -> SafeDec<D> {
-                            SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).{{method}}(other.0{{maybe_clone}}))
-                        }
-                    }
-
-                    #[test]
-                    fn {{test_name}}() {
-                        let a = SafeDec::<3>::from_raw(12);
-                        let b = {{impl_type}}::try_from(65).unwrap();
-                        let c = b.{{method}}(a);
-                        assert_eq!(c.0, SafeInt::from({{expected_answer}}));
-                    }
-                }
-            }
-            for op in ["Mul"] {
-                let method = op.to_lowercase();
-                let maybe_clone = if self_type == "&SafeDec<D>" {
-                    ".clone()"
-                } else {
-                    ""
-                };
-                let test_name = format!(
-                    "test_{}_{}_{}",
-                    op.to_lowercase(),
-                    if self_type == "&SafeDec<D>" {
-                        "safe_dec_ref"
-                    } else {
-                        "safe_dec"
-                    },
-                    impl_type.to_lowercase()
-                );
-                let expected_answer = 780;
-                crabtime::output! {
-                    impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
-                        type Output = SafeDec<D>;
-
-                        #[inline(always)]
-                        fn {{method}}(self, other: {{self_type}}) -> SafeDec<D> {
-                            SafeDec(SafeInt::from(self).{{method}}(other.0{{maybe_clone}}))
-                        }
-                    }
-
-                    #[test]
-                    fn {{test_name}}() {
-                        let a = SafeDec::<3>::from_raw(12);
-                        let b = {{impl_type}}::try_from(65).unwrap();
-                        let c = b.{{method}}(a);
-                        assert_eq!(c.0, SafeInt::from({{expected_answer}}));
-                    }
-                }
+            #[inline(always)]
+            fn add(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).add(other.0))
             }
         }
-        // SafeDec types linear
-        for impl_type in ["SafeDec<D>", "&SafeDec<D>"] {
-            for op in ["Add", "Sub", "BitAnd", "BitOr", "BitXor"] {
-                let method = op.to_lowercase();
-                let maybe_clone = if self_type == "&SafeDec<D>" {
-                    ".clone()"
-                } else {
-                    ""
-                };
-                let impl_maybe_clone = if impl_type == "&SafeDec<D>" {
-                    ".clone()"
-                } else {
-                    ""
-                };
-                let test_name = format!(
-                    "test_{}_{}_{}",
-                    op.to_lowercase(),
-                    if self_type == "&SafeDec<D>" {
-                        "safe_dec_ref"
-                    } else {
-                        "safe_dec"
-                    },
-                    if impl_type == "&SafeDec<D>" {
-                        "safe_dec_ref"
-                    } else {
-                        "safe_dec"
-                    }
-                );
-                let expected_answer = match op {
-                    "Add" => 77,
-                    "Sub" => 53,
-                    "BitXor" => 77,
-                    "BitOr" => 77,
-                    "BitAnd" => 0,
-                    _ => unreachable!(),
-                };
-                crabtime::output! {
-                    impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
-                        type Output = SafeDec<D>;
 
-                        #[inline(always)]
-                        fn {{method}}(self, other: {{self_type}}) -> SafeDec<D> {
-                            SafeDec(self{{impl_maybe_clone}}.0.{{method}}(other.0{{maybe_clone}}))
-                        }
-                    }
+        impl<const D: usize> Sub<SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
 
-                    #[test]
-                    fn {{test_name}}() {
-                        let a = SafeDec::<3>::from_raw(12);
-                        let b = SafeDec::<3>::from_raw(65);
-                        let c = b.{{method}}(a);
-                        assert_eq!(c.0, SafeInt::from({{expected_answer}}));
-                    }
-                }
+            #[inline(always)]
+            fn sub(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).sub(other.0))
             }
         }
-        // SafeInt types
-        for impl_type in ["SafeInt", "&SafeInt"] {
-            for op in ["Add", "Sub", "BitAnd", "BitOr", "BitXor"] {
-                let method = op.to_lowercase();
-                let maybe_clone = if self_type == "&SafeDec<D>" {
-                    ".clone()"
-                } else {
-                    ""
-                };
-                let test_name = format!(
-                    "test_{}_{}_{}",
-                    op.to_lowercase(),
-                    if self_type == "&SafeDec<D>" {
-                        "safe_dec_ref"
-                    } else {
-                        "safe_dec"
-                    },
-                    if impl_type == "&SafeInt" {
-                        "safe_int_ref"
-                    } else {
-                        "safe_int"
-                    }
-                );
-                let expected_answer = match op {
-                    "Add" => 77,
-                    "Sub" => 53,
-                    "BitXor" => 77,
-                    "BitOr" => 77,
-                    "BitAnd" => 0,
-                    _ => unreachable!(),
-                };
-                crabtime::output! {
-                    impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
-                        type Output = SafeDec<D>;
 
-                        #[inline(always)]
-                        fn {{method}}(self, other: {{self_type}}) -> SafeDec<D> {
-                            SafeDec(SafeDec::<D>::scale_up(&self).{{method}}(other.0{{maybe_clone}}))
-                        }
-                    }
+        impl<const D: usize> BitAnd<SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
 
-                    #[test]
-                    fn {{test_name}}() {
-                        let a = SafeDec::<3>::from_raw(12);
-                        let b = SafeDec::<3>::from_raw(65);
-                        let c = b.{{method}}(a);
-                        assert_eq!(c.0, SafeInt::from({{expected_answer}}));
-                    }
-                }
-            }
-            for op in ["Mul"] {
-                let method = op.to_lowercase();
-                let maybe_clone = if self_type == "&SafeDec<D>" {
-                    ".clone()"
-                } else {
-                    ""
-                };
-                let test_name = format!(
-                    "test_{}_{}_{}",
-                    op.to_lowercase(),
-                    if self_type == "&SafeDec<D>" {
-                        "safe_dec_ref"
-                    } else {
-                        "safe_dec"
-                    },
-                    if impl_type == "&SafeInt" {
-                        "safe_int_ref"
-                    } else {
-                        "safe_int"
-                    }
-                );
-                let expected_answer = 0;
-                crabtime::output! {
-                    impl<const D: usize> {{op}}<{{self_type}}> for {{impl_type}} {
-                        type Output = SafeDec<D>;
-
-                        #[inline(always)]
-                        fn {{method}}(self, other: {{self_type}}) -> SafeDec<D> {
-                            SafeDec(self.{{method}}(other.0{{maybe_clone}}))
-                        }
-                    }
-
-                    #[test]
-                    fn {{test_name}}() {
-                        let a = SafeDec::<3>::from_raw(12);
-                        let b = SafeDec::<3>::from_raw(65);
-                        let c = b.{{method}}(a);
-                        assert_eq!(c.0, SafeInt::from({{expected_answer}}));
-                    }
-                }
+            #[inline(always)]
+            fn bitand(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).bitand(other.0))
             }
         }
-    }
+
+        impl<const D: usize> BitOr<SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitor(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).bitor(other.0))
+            }
+        }
+
+        impl<const D: usize> BitXor<SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitxor(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).bitxor(other.0))
+            }
+        }
+
+        impl<const D: usize> Mul<SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn mul(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeInt::from(self).mul(other.0))
+            }
+        }
+    };
+    ($prim:ty, rhs_ref) => {
+        impl<const D: usize> Add<&SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn add(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).add(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> Sub<&SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn sub(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).sub(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitAnd<&SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitand(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).bitand(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitOr<&SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitor(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).bitor(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitXor<&SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitxor(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).bitxor(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> Mul<&SafeDec<D>> for $prim {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn mul(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeInt::from(self).mul(other.0.clone()))
+            }
+        }
+    };
 }
 
-gen_decimal_ops!();
+macro_rules! impl_decimal_div_for_primitive {
+    ($prim:ty, rhs_value) => {
+        impl<const D: usize> Div<SafeDec<D>> for $prim {
+            type Output = Option<SafeDec<D>>;
 
-#[crabtime::function]
-fn gen_decimal_divs() {
-    for self_type in ["SafeDec<D>", "&SafeDec<D>"] {
-        // integer primitives
-        for impl_type in [
-            "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "usize", "isize",
-        ] {
-            let maybe_clone = if self_type == "&SafeDec<D>" {
-                ".clone()"
-            } else {
-                ""
-            };
-            let test_name = format!(
-                "test_div_{}_{}",
-                if self_type == "&SafeDec<D>" {
-                    "safe_dec_ref"
-                } else {
-                    "safe_dec"
-                },
-                impl_type.to_lowercase()
-            );
-            crabtime::output! {
-                impl<const D: usize> Div<{{self_type}}> for {{impl_type}} {
-                    type Output = Option<SafeDec<D>>;
-
-                    #[inline(always)]
-                    fn div(self, other: {{self_type}}) -> Option<SafeDec<D>> {
-                        Some(SafeDec(SafeDec::<D>::scale_up(&SafeInt::from(self)).div(other.0{{maybe_clone}})?))
-                    }
-                }
-
-                #[test]
-                fn {{test_name}}() {
-                    let a = SafeDec::<3>::from_raw(12);
-                    let b = {{impl_type}}::try_from(65).unwrap();
-                    let c = b.div(a).unwrap();
-                    assert_eq!(c.0, SafeInt::from(5416));
-                }
+            #[inline(always)]
+            fn div(self, other: SafeDec<D>) -> Option<SafeDec<D>> {
+                Some(SafeDec(
+                    SafeDec::<D>::scale_up(&SafeInt::from(self)).div(other.0)?,
+                ))
             }
         }
-    }
+    };
+    ($prim:ty, rhs_ref) => {
+        impl<const D: usize> Div<&SafeDec<D>> for $prim {
+            type Output = Option<SafeDec<D>>;
+
+            #[inline(always)]
+            fn div(self, other: &SafeDec<D>) -> Option<SafeDec<D>> {
+                Some(SafeDec(
+                    SafeDec::<D>::scale_up(&SafeInt::from(self)).div(other.0.clone())?,
+                ))
+            }
+        }
+    };
 }
 
-gen_decimal_divs!();
+macro_rules! for_each_primitive {
+    ($macro:ident, $rhs_kind:ident) => {
+        $macro!(u8, $rhs_kind);
+        $macro!(u16, $rhs_kind);
+        $macro!(u32, $rhs_kind);
+        $macro!(u64, $rhs_kind);
+        $macro!(u128, $rhs_kind);
+        $macro!(i8, $rhs_kind);
+        $macro!(i16, $rhs_kind);
+        $macro!(i32, $rhs_kind);
+        $macro!(i64, $rhs_kind);
+        $macro!(i128, $rhs_kind);
+        $macro!(usize, $rhs_kind);
+        $macro!(isize, $rhs_kind);
+    };
+}
+
+macro_rules! impl_decimal_ops_for_safe_dec {
+    (lhs_value, rhs_value) => {
+        impl<const D: usize> Add<SafeDec<D>> for SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn add(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.0.add(other.0))
+            }
+        }
+
+        impl<const D: usize> Sub<SafeDec<D>> for SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn sub(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.0.sub(other.0))
+            }
+        }
+
+        impl<const D: usize> BitAnd<SafeDec<D>> for SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitand(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.0.bitand(other.0))
+            }
+        }
+
+        impl<const D: usize> BitOr<SafeDec<D>> for SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitor(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.0.bitor(other.0))
+            }
+        }
+
+        impl<const D: usize> BitXor<SafeDec<D>> for SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitxor(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.0.bitxor(other.0))
+            }
+        }
+    };
+    (lhs_ref, rhs_value) => {
+        impl<const D: usize> Add<SafeDec<D>> for &SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn add(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.clone().0.add(other.0))
+            }
+        }
+
+        impl<const D: usize> Sub<SafeDec<D>> for &SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn sub(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.clone().0.sub(other.0))
+            }
+        }
+
+        impl<const D: usize> BitAnd<SafeDec<D>> for &SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitand(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.clone().0.bitand(other.0))
+            }
+        }
+
+        impl<const D: usize> BitOr<SafeDec<D>> for &SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitor(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.clone().0.bitor(other.0))
+            }
+        }
+
+        impl<const D: usize> BitXor<SafeDec<D>> for &SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitxor(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.clone().0.bitxor(other.0))
+            }
+        }
+    };
+    (lhs_value, rhs_ref) => {
+        impl<const D: usize> Add<&SafeDec<D>> for SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn add(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.0.add(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> Sub<&SafeDec<D>> for SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn sub(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.0.sub(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitAnd<&SafeDec<D>> for SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitand(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.0.bitand(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitOr<&SafeDec<D>> for SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitor(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.0.bitor(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitXor<&SafeDec<D>> for SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitxor(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.0.bitxor(other.0.clone()))
+            }
+        }
+    };
+    (lhs_ref, rhs_ref) => {
+        impl<const D: usize> Add<&SafeDec<D>> for &SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn add(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.clone().0.add(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> Sub<&SafeDec<D>> for &SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn sub(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.clone().0.sub(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitAnd<&SafeDec<D>> for &SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitand(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.clone().0.bitand(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitOr<&SafeDec<D>> for &SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitor(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.clone().0.bitor(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitXor<&SafeDec<D>> for &SafeDec<D> {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitxor(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.clone().0.bitxor(other.0.clone()))
+            }
+        }
+    };
+}
+
+macro_rules! impl_decimal_ops_for_safe_int {
+    (lhs_value, rhs_value) => {
+        impl<const D: usize> Add<SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn add(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&self).add(other.0))
+            }
+        }
+
+        impl<const D: usize> Sub<SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn sub(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&self).sub(other.0))
+            }
+        }
+
+        impl<const D: usize> BitAnd<SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitand(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&self).bitand(other.0))
+            }
+        }
+
+        impl<const D: usize> BitOr<SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitor(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&self).bitor(other.0))
+            }
+        }
+
+        impl<const D: usize> BitXor<SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitxor(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&self).bitxor(other.0))
+            }
+        }
+
+        impl<const D: usize> Mul<SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn mul(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.mul(other.0))
+            }
+        }
+    };
+    (lhs_ref, rhs_value) => {
+        impl<const D: usize> Add<SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn add(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(self).add(other.0))
+            }
+        }
+
+        impl<const D: usize> Sub<SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn sub(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(self).sub(other.0))
+            }
+        }
+
+        impl<const D: usize> BitAnd<SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitand(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(self).bitand(other.0))
+            }
+        }
+
+        impl<const D: usize> BitOr<SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitor(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(self).bitor(other.0))
+            }
+        }
+
+        impl<const D: usize> BitXor<SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitxor(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(self).bitxor(other.0))
+            }
+        }
+
+        impl<const D: usize> Mul<SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn mul(self, other: SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.mul(other.0))
+            }
+        }
+    };
+    (lhs_value, rhs_ref) => {
+        impl<const D: usize> Add<&SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn add(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&self).add(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> Sub<&SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn sub(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&self).sub(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitAnd<&SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitand(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&self).bitand(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitOr<&SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitor(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&self).bitor(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitXor<&SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitxor(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(&self).bitxor(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> Mul<&SafeDec<D>> for SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn mul(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.mul(other.0.clone()))
+            }
+        }
+    };
+    (lhs_ref, rhs_ref) => {
+        impl<const D: usize> Add<&SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn add(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(self).add(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> Sub<&SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn sub(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(self).sub(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitAnd<&SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitand(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(self).bitand(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitOr<&SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitor(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(self).bitor(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> BitXor<&SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn bitxor(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(SafeDec::<D>::scale_up(self).bitxor(other.0.clone()))
+            }
+        }
+
+        impl<const D: usize> Mul<&SafeDec<D>> for &SafeInt {
+            type Output = SafeDec<D>;
+
+            #[inline(always)]
+            fn mul(self, other: &SafeDec<D>) -> SafeDec<D> {
+                SafeDec(self.mul(other.0.clone()))
+            }
+        }
+    };
+}
+
+for_each_primitive!(impl_decimal_ops_for_primitive, rhs_value);
+for_each_primitive!(impl_decimal_ops_for_primitive, rhs_ref);
+for_each_primitive!(impl_decimal_div_for_primitive, rhs_value);
+for_each_primitive!(impl_decimal_div_for_primitive, rhs_ref);
+
+impl_decimal_ops_for_safe_dec!(lhs_value, rhs_value);
+impl_decimal_ops_for_safe_dec!(lhs_ref, rhs_value);
+impl_decimal_ops_for_safe_dec!(lhs_value, rhs_ref);
+impl_decimal_ops_for_safe_dec!(lhs_ref, rhs_ref);
+
+impl_decimal_ops_for_safe_int!(lhs_value, rhs_value);
+impl_decimal_ops_for_safe_int!(lhs_ref, rhs_value);
+impl_decimal_ops_for_safe_int!(lhs_value, rhs_ref);
+impl_decimal_ops_for_safe_int!(lhs_ref, rhs_ref);
 
 impl<const D: usize> Mul for SafeDec<D> {
     type Output = SafeDec<D>;
