@@ -654,7 +654,7 @@ fn ln_biguint(
         max_iters,
     );
 
-    ln_mantissa + ln_two * BigInt::from(shift as u64)
+    ln_mantissa + ln_two * BigInt::from(shift)
 }
 
 fn round_to_precision(value: &BigInt, guard_factor: &BigInt) -> BigInt {

@@ -87,7 +87,7 @@ impl<const D: usize> Display for SafeDec<D> {
 
         // These divisions are safe since divisor is never zero
         let integer_part = (&abs_value / &divisor).unwrap_or(SafeInt::zero());
-        let mut decimal_part = (&abs_value % &divisor).unwrap_or_else(|| SafeInt::zero());
+        let mut decimal_part = (&abs_value % &divisor).unwrap_or_else(SafeInt::zero);
 
         if self.0.is_negative() {
             write!(f, "-")?;
