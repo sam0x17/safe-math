@@ -116,10 +116,15 @@ impl SafeInt {
     }
 
     /// Computes quotient and remainder simultaneously.
+    /// Returns `None` if `other` is zero.
     #[inline(always)]
-    pub fn div_rem(self, other: SafeInt) -> (SafeInt, SafeInt) {
-        let (div, rem) = self.0.div_rem(&other.0);
-        (SafeInt(div), SafeInt(rem))
+    pub fn div_rem(self, other: SafeInt) -> Option<(SafeInt, SafeInt)> {
+        if other.0.is_zero() {
+            None
+        } else {
+            let (div, rem) = self.0.div_rem(&other.0);
+            Some((SafeInt(div), SafeInt(rem)))
+        }
     }
 
     /// Converts to `u8` if the value fits.
@@ -718,10 +723,66 @@ macro_rules! impl_pair_ops {
     };
 }
 
+macro_rules! impl_pair_rem_ops {
+    () => {
+        impl Rem for SafeInt {
+            type Output = Option<SafeInt>;
+
+            #[inline(always)]
+            fn rem(self, other: SafeInt) -> Option<SafeInt> {
+                if other.0.is_zero() {
+                    None
+                } else {
+                    Some(SafeInt(self.0 % other.0))
+                }
+            }
+        }
+
+        impl Rem<&SafeInt> for SafeInt {
+            type Output = Option<SafeInt>;
+
+            #[inline(always)]
+            fn rem(self, other: &SafeInt) -> Option<SafeInt> {
+                if other.0.is_zero() {
+                    None
+                } else {
+                    Some(SafeInt(self.0 % &other.0))
+                }
+            }
+        }
+
+        impl Rem<SafeInt> for &SafeInt {
+            type Output = Option<SafeInt>;
+
+            #[inline(always)]
+            fn rem(self, other: SafeInt) -> Option<SafeInt> {
+                if other.0.is_zero() {
+                    None
+                } else {
+                    Some(SafeInt(self.0.clone() % other.0))
+                }
+            }
+        }
+
+        impl Rem<&SafeInt> for &SafeInt {
+            type Output = Option<SafeInt>;
+
+            #[inline(always)]
+            fn rem(self, other: &SafeInt) -> Option<SafeInt> {
+                if other.0.is_zero() {
+                    None
+                } else {
+                    Some(SafeInt(self.0.clone() % &other.0))
+                }
+            }
+        }
+    };
+}
+
 impl_pair_ops!(Add, add);
 impl_pair_ops!(Sub, sub);
 impl_pair_ops!(Mul, mul);
-impl_pair_ops!(Rem, rem);
+impl_pair_rem_ops!();
 impl_pair_ops!(BitAnd, bitand);
 impl_pair_ops!(BitOr, bitor);
 impl_pair_ops!(BitXor, bitxor);
@@ -768,6 +829,64 @@ macro_rules! impl_prim_ops {
     };
 }
 
+macro_rules! impl_prim_rem_ops {
+    ($($t:ty),*) => {
+        $(
+            impl Rem<$t> for SafeInt {
+                type Output = Option<SafeInt>;
+
+                #[inline(always)]
+                fn rem(self, other: $t) -> Option<SafeInt> {
+                    if other == 0 {
+                        None
+                    } else {
+                        Some(SafeInt(self.0 % BigInt::from(other)))
+                    }
+                }
+            }
+
+            impl Rem<$t> for &SafeInt {
+                type Output = Option<SafeInt>;
+
+                #[inline(always)]
+                fn rem(self, other: $t) -> Option<SafeInt> {
+                    if other == 0 {
+                        None
+                    } else {
+                        Some(SafeInt(self.0.clone() % BigInt::from(other)))
+                    }
+                }
+            }
+
+            impl Rem<SafeInt> for $t {
+                type Output = Option<SafeInt>;
+
+                #[inline(always)]
+                fn rem(self, other: SafeInt) -> Option<SafeInt> {
+                    if other.0.is_zero() {
+                        None
+                    } else {
+                        Some(SafeInt(BigInt::from(self) % other.0))
+                    }
+                }
+            }
+
+            impl Rem<&SafeInt> for $t {
+                type Output = Option<SafeInt>;
+
+                #[inline(always)]
+                fn rem(self, other: &SafeInt) -> Option<SafeInt> {
+                    if other.0.is_zero() {
+                        None
+                    } else {
+                        Some(SafeInt(BigInt::from(self) % other.0.clone()))
+                    }
+                }
+            }
+        )*
+    };
+}
+
 impl_prim_ops!(
     Add,
     add,
@@ -789,12 +908,8 @@ impl_prim_ops!(
         u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
     ]
 );
-impl_prim_ops!(
-    Rem,
-    rem,
-    [
-        u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
-    ]
+impl_prim_rem_ops!(
+    u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
 );
 impl_prim_ops!(
     BitAnd,
@@ -863,14 +978,18 @@ impl MulAssign<&SafeInt> for SafeInt {
 impl RemAssign<SafeInt> for SafeInt {
     #[inline(always)]
     fn rem_assign(&mut self, rhs: SafeInt) {
-        self.0 %= rhs.0;
+        if !rhs.0.is_zero() {
+            self.0 %= rhs.0;
+        }
     }
 }
 
 impl RemAssign<&SafeInt> for SafeInt {
     #[inline(always)]
     fn rem_assign(&mut self, rhs: &SafeInt) {
-        self.0 %= &rhs.0;
+        if !rhs.0.is_zero() {
+            self.0 %= &rhs.0;
+        }
     }
 }
 
@@ -929,10 +1048,27 @@ macro_rules! impl_assign_prim {
     };
 }
 
+macro_rules! impl_rem_assign_prim {
+    ($($t:ty),*) => {
+        $(
+            impl RemAssign<$t> for SafeInt {
+                #[inline(always)]
+                fn rem_assign(&mut self, rhs: $t) {
+                    if rhs != 0 {
+                        self.0 %= BigInt::from(rhs);
+                    }
+                }
+            }
+        )*
+    };
+}
+
 impl_assign_prim!(AddAssign, add_assign, +=, [u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize]);
 impl_assign_prim!(SubAssign, sub_assign, -=, [u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize]);
 impl_assign_prim!(MulAssign, mul_assign, *=, [u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize]);
-impl_assign_prim!(RemAssign, rem_assign, %=, [u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize]);
+impl_rem_assign_prim!(
+    u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
+);
 impl_assign_prim!(BitAndAssign, bitand_assign, &=, [u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize]);
 impl_assign_prim!(BitOrAssign, bitor_assign, |=, [u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize]);
 impl_assign_prim!(BitXorAssign, bitxor_assign, ^=, [u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize]);
@@ -1276,6 +1412,17 @@ fn general() {
     );
     assert_eq!(33 / SafeInt::from(3), Some(SafeInt::from(11)));
     assert_eq!(SafeInt::from(33) / 3, Some(SafeInt::from(11)));
+    assert_eq!(SafeInt::from(10) % SafeInt::from(3), Some(SafeInt::from(1)));
+    assert_eq!(SafeInt::from(10) % SafeInt::from(0), None);
+    assert_eq!(10 % SafeInt::from(3), Some(SafeInt::from(1)));
+    assert_eq!(10 % SafeInt::from(0), None);
+    assert_eq!(SafeInt::from(10) % 3, Some(SafeInt::from(1)));
+    assert_eq!(SafeInt::from(10) % 0, None);
+    assert_eq!(
+        SafeInt::from(10).div_rem(SafeInt::from(3)),
+        Some((SafeInt::from(3), SafeInt::from(1)))
+    );
+    assert_eq!(SafeInt::from(10).div_rem(SafeInt::from(0)), None);
     assert_eq!(33 + SafeInt::from(2), 35);
     assert_eq!(SafeInt::from(33) + 2, 35);
     assert_eq!(SafeInt::from(5) / SafeInt::from(0), None);

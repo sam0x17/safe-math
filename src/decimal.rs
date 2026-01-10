@@ -87,7 +87,7 @@ impl<const D: usize> Display for SafeDec<D> {
 
         // These divisions are safe since divisor is never zero
         let integer_part = (&abs_value / &divisor).unwrap_or(SafeInt::zero());
-        let mut decimal_part = &abs_value % &divisor;
+        let mut decimal_part = (&abs_value % &divisor).unwrap_or_else(|| SafeInt::zero());
 
         if self.0.is_negative() {
             write!(f, "-")?;
@@ -99,7 +99,9 @@ impl<const D: usize> Display for SafeDec<D> {
         // Extract D decimal digits
         let mut pow10 = (&divisor / &ten).unwrap(); // guaranteed non-zero
         for _ in 0..D {
-            let (digit, rem) = decimal_part.div_rem(pow10.clone());
+            let (digit, rem) = decimal_part
+                .div_rem(pow10.clone())
+                .unwrap_or_else(|| (SafeInt::zero(), SafeInt::zero()));
             write!(f, "{}", digit)?;
             decimal_part = rem;
             pow10 = (&pow10 / &ten).unwrap_or(1.into()); // last one goes to 1
